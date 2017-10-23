@@ -33,3 +33,70 @@ test('merges existing config', () => {
     'merges existing config'
   );
 });
+
+describe('injects polyfill into entries, when', () => {
+  const wpConfig = {};
+  const fakePolyfillPath = 'path/to/polyfill';
+  const options = { root: path.resolve(__dirname, 'fixtures') };
+
+  describe('entry is a string', () => {
+    wpConfig.entry = './src/index.js';
+    const [configs, PLATFORMS] = makeReactNativeConfig(
+      wpConfig,
+      options,
+      fakePolyfillPath
+    );
+
+    configs.forEach((config, i) => {
+      test(`platform ${PLATFORMS[i]}`, () => {
+        expect(config.entry.length).toBe(2);
+        expect(config.entry[0]).toBe(fakePolyfillPath);
+      });
+    });
+  });
+
+  describe('entry is an array', () => {
+    wpConfig.entry = ['./src/index.js', './src/module.js'];
+    const [configs, PLATFORM] = makeReactNativeConfig(
+      wpConfig,
+      options,
+      fakePolyfillPath
+    );
+
+    configs.forEach((config, i) => {
+      test(`platform ${PLATFORM[i]}`, () => {
+        expect(config.entry[0]).toBe(fakePolyfillPath);
+        expect(config.entry.length).toBe(3);
+      });
+    });
+  });
+
+  describe('entry is an object', () => {
+    wpConfig.entry = {
+      entry1: './src/index.js',
+      entry2: ['./src/module.js', './src/vendor.js'],
+    };
+    const expectedEntry1 = [fakePolyfillPath, './src/index.js'];
+
+    const expectedEntry2 = [
+      fakePolyfillPath,
+      './src/module.js',
+      './src/vendor.js',
+    ];
+
+    const [configs, PLATFORM] = makeReactNativeConfig(
+      wpConfig,
+      options,
+      fakePolyfillPath
+    );
+
+    configs.forEach((config, i) => {
+      test(`platform ${PLATFORM[i]} matches object`, () => {
+        expect(config.entry).toMatchObject({
+          entry1: expectedEntry1,
+          entry2: expectedEntry2,
+        });
+      });
+    });
+  });
+});
